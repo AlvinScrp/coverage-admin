@@ -89,6 +89,18 @@ export const constantRoutes = [
       }
     ]
   },
+  {
+    path: '/report',
+    component: Layout,
+    children: [
+      {
+        path: 'index',
+        nanme: 'Report',
+        component: () => import('@/views/report/index'),
+        meta: { title: '报告', icon: 'report' }
+      }
+    ]
+  },
 
   {
     path: '/nested',

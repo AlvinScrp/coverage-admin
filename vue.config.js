@@ -36,6 +36,14 @@ module.exports = {
       warnings: false,
       errors: true
     },
+    proxy: {
+      '/api/report': {
+        target: process.env.VUE_APP_REPORT_HOST // 我们要代理请求的真正地址
+      },
+      '/api/log': {
+        target: process.env.VUE_APP_REPORT_HOST // 我们要代理请求的真正地址
+      }
+    },
     before: require('./mock/mock-server.js')
   },
   configureWebpack: {
