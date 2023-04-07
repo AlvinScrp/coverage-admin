@@ -1,7 +1,7 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-select v-model="appNameDisplay" placeholder="应用名称" clearable style="width: 200px" class="filter-item">
+      <el-select v-model="appNameDisplay" placeholder="应用名称" style="width: 200px" class="filter-item">
         <el-option v-for="item in appNameDisplayOptions" :key="item" :label="item" :value="item" />
       </el-select>
       <el-input
@@ -82,7 +82,6 @@
     <el-dialog width="75%" top="30px" title="创建报告" :visible.sync="createReportDialogVisible">
       <report-create-dialog
         v-if="createReportDialogVisible"
-        :app-name-prop="listQuery.appName"
         :app-name-display-prop="appNameDisplay"
         :build-num-prop="listQuery.buildNum"
         @dismiss="createReportDialogVisible = false"
@@ -93,7 +92,7 @@
 </template>
 
 <script>
-import { getReportList } from '@/api/report'
+import { getReportList, getJenkinsBuild } from '@/api/report'
 import ReportCreateDialog from './report-create-dialog/index.vue'
 import clip from '@/utils/clipboard' // use clipboard directly
 
@@ -107,23 +106,16 @@ export default {
       listQuery: {
         pageSize: 10,
         pageIndex: 1,
-        appName: 'fxj',
-        buildNum: '200'
+        buildNum: '211'
 
       },
       total: 0,
       createReportDialogVisible: false,
       appNameDisplay: '蜂享家掌柜-Android',
-      appNameOptions: ['fxj', 'hyk'],
-      appNameDisplayOptions: ['蜂享家掌柜-Android', '好衣库-Android'],
-      pageSizeOptions: [10, 20, 50]
-    }
-  },
-  watch: {
-    appNameDisplay: function(newVal, oldVal) {
-      var index = this.appNameDisplayOptions.indexOf(newVal)
-      var name = this.appNameOptions[index]
-      this.listQuery.appName = name
+      appNameOptions: ['FXJ', 'FXJ', 'HYK'],
+      osTypes: ['Android', 'iOS', 'Android'],
+      appNameDisplayOptions: ['蜂享家掌柜-Android', '蜂享家掌柜-iOS', '好衣库-Android'],
+      pageSizeOptions: [5, 10, 20, 50]
     }
   },
   created() {
@@ -132,8 +124,10 @@ export default {
   methods: {
     fetchData() {
       this.listLoading = true
-      var { pageSize, pageIndex, appName, buildNum } = this.listQuery
-      var params = { pageIndex, pageSize }
+      var { pageSize, pageIndex, buildNum } = this.listQuery
+      var appIndex = this.appNameDisplayOptions.indexOf(this.appNameDisplay)
+      var params = { pageIndex, pageSize, osType: this.osTypes[appIndex] }
+      var appName = this.appNameOptions[appIndex]
       if (appName) {
         params.appName = appName
         var numInt = parseInt(buildNum, 10)
@@ -149,6 +143,9 @@ export default {
         this.listQuery.pageSize = entry.pageSize
         this.total = entry.count
         this.listLoading = false
+      })
+      getJenkinsBuild(params).then((response) => {
+        console.log(response)
       })
     },
     handleFilter() {

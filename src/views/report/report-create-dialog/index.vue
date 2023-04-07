@@ -1,41 +1,51 @@
 <template>
   <div style="margin-top: -20px;">
     <div>
-      <el-select v-model="appNameDisplay" placeholder="应用名称" clearable style="width: 200px" class="filter-item">
+      应用名称：
+      <el-select v-model="appNameDisplay" size="small" placeholder="应用名称" style="width: 200px" class="filter-item">
         <el-option v-for="item in appNameDisplayOptions" :key="item" :label="item" :value="item" />
       </el-select>
-      <el-input v-model="form.buildNum" placeholder="构建序号" type="Number" style="width: 100px;" class="filter-item" @keyup.enter.native="handleFilter" />
-      <el-button class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">
-        查询可用日志
-      </el-button>
-      <span v-if="showErrorAppName" class="error-text"> 应用名不能为空!</span>
-      <span v-if="showErrorBuildNum" class="error-text"> 构建序号为数字,并且>0!</span>
     </div>
-    <el-table style="margin-top: 10px;" size="small" max-height="315px" border :data="logs" @selection-change="handleSelectionChange">
+    <div style="margin-top: 10px;">
+      构建序号：
+      <el-input v-model="buildNum" placeholder="构建序号" size="small" type="Number" style="width: 130px;" class="filter-item" @keyup.enter.native="handleFilter" />
+      <!-- <el-button class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">
+        查询可用日志
+      </el-button> -->
+      <div v-if="showErrorBuildNum">
+        <span class="error-text"> 至少选择一个包含日志的构建序号</span>
+      </div>
+    </div>
+    <div style="margin-top: 10px;">
+      增量比较：
+      <el-input v-model="relativebuildNum" size="small" type="Number" placeholder="相对构建序号" style="width: 130px;" class="filter-item" />
+      <span> （不填就生成全量报告）</span>
+    </div>
+    <!-- :selectable="row.enable" -->
+    <el-table
+      ref="logBuildTable"
+      style="margin-top: 10px;"
+      size="small"
+      max-height="515px"
+      border
+      :data="builds"
+      @selection-change="handleSelectionChange"
+    >
       <el-table-column
         type="selection"
         width="55"
         align="center"
+        :selectable="checkSelectable"
       />
-      <el-table-column label="日志">
-        <template slot-scope="scope">  {{ scope.row.name }} </template>
+      <el-table-column label=" 包含可用日志的目录">
+        <template slot-scope="scope">  {{ scope.row.buildLogDir }} </template>
       </el-table-column>
 
     </el-table>
     <div v-if="showErrorLog">
-      <span class="error-text"> 至少选择一个日志文件</span>
+      <span class="error-text"> 至少选择一个包含日志的目录</span>
     </div>
-    <div class="increment-container">
-      <el-checkbox v-model="form.increment">增量报告</el-checkbox>
-      <div v-if="form.increment" class="filter-item">
-        <span>相对于构建序号为 </span>
-        <el-input v-model="form.relativebuildNum" size="small" style="width: 80px;" />
-        <span> 的增量</span>
-      </div>
-    </div>
-    <div v-if="showErrorIncrement">
-      <span class="error-text"> 增量报告，需要填写相对构建序号，且>0</span>
-    </div>
+
     <div slot="footer" class="dialog-footer">
       <el-button @click="$emit('dismiss')">取 消</el-button>
       <el-button type="primary" @click="handleCreate()">创建</el-button>
@@ -44,14 +54,10 @@
 </template>
 
 <script>
-import { getLogList, createReport } from '@/api/report'
+import { getLogList, getLogBuildList, createReport } from '@/api/report'
 export default {
   props: {
     appNameDisplayProp: {
-      type: String,
-      default: ''
-    },
-    appNameProp: {
       type: String,
       default: ''
     },
@@ -62,49 +68,39 @@ export default {
   },
   data() {
     return {
-      form: {
-        appName: '',
-        buildNum: '',
-        increment: true,
-        relativebuildNum: '8',
-        selectLogs: []
-      },
-      appNameDisplay: '',
-      appNameOptions: ['fxj', 'hyk'],
-      appNameDisplayOptions: ['蜂享家掌柜-Android', '好衣库-Android'],
+      buildNum: '',
+      relativebuildNum: '200',
+      selectLogs: [],
+      appNameDisplay: '蜂享家掌柜-Android',
+      appNameOptions: ['FXJ', 'FXJ', 'HYK'],
+      osTypes: ['Android', 'iOS', 'Android'],
+      appNameDisplayOptions: ['蜂享家掌柜-Android', '蜂享家掌柜-iOS', '好衣库-Android'],
       logs: [],
+      builds: [],
       errors: 0
     }
   },
   computed: {
-
-    showErrorAppName: function() {
-      return (this.errors & 1) > 0
-    },
     showErrorBuildNum: function() {
       return (this.errors & 2) > 0
     },
     showErrorLog: function() {
       return (this.errors & 4) > 0
-    },
-    showErrorIncrement: function() {
-      return (this.errors & 8) > 0
     }
   },
   watch: {
-    appNameDisplay: function(newVal, oldVal) {
-      var index = this.appNameDisplayOptions.indexOf(newVal)
-      var name = this.appNameOptions[index]
-      console.log(name)
-      this.form.appName = name
+    buildNum(val) {
+      this.resetLogBuildSelection()
+    },
+    relativebuildNum(val) {
+      this.resetLogBuildSelection()
     }
   },
 
   created() {
     console.log('create')
     this.appNameDisplay = this.appNameDisplayProp
-    this.form.appName = this.appNameProp
-    this.form.buildNum = this.buildNumProp
+    this.buildNum = this.buildNumProp
     this.fetchLogList(true)
   },
   mounted() {
@@ -112,39 +108,59 @@ export default {
   },
   methods: {
     fetchLogList(manual) {
-      console.log(`this.form.appName:${this.form.appName}`)
-      console.log(`${!this.form.appName}`)
-      if (!this.form.appName || !this.form.buildNum || parseInt(this.form.buildNum) <= 0) {
+      if (!this.buildNum || parseInt(this.buildNum) <= 0) {
         if (manual) {
-          this.$message.error('应用名不允许为空,构建序号必须 > 0')
+          this.$message.error('构建序号必须 > 0')
         }
         return
       }
-      var listQuery = { appName: this.form.appName, buildNum: this.form.buildNum }
-      getLogList(listQuery).then(response => {
-        this.logs = response.entry.list
+      var appIndex = this.appNameDisplayOptions.indexOf(this.appNameDisplay)
+      var listQuery = {
+        appName: this.appNameOptions[appIndex],
+        osType: this.osTypes[appIndex],
+        buildNum: this.buildNum }
+
+      getLogBuildList(listQuery).then(response => {
+        this.builds = response.entry.list
+        this.$nextTick(() => {
+          this.resetLogBuildSelection()
+        })
+      })
+    },
+    resetLogBuildSelection() {
+      console.log('resetLogBuildSelection')
+      this.$refs.logBuildTable.clearSelection()
+      this.builds.forEach(item => {
+        console.log(item)
+        if (this.checkSelectable(item) && item.buildNum === this.buildNum) {
+          this.$refs.logBuildTable.toggleRowSelection(item)
+        }
       })
     },
     handleFilter() {
       this.fetchLogList(true)
     },
     handleSelectionChange(selections) {
-      this.form.selectLogs = selections
-      console.log(this.form.selectLogs)
+      this.selectLogs = selections
+      console.log(this.selectLogs)
     },
     showError(index) {
       console.log(`showError:${index} ${(this.errors & index) > 0}`)
       return (this.errors & index) > 0
     },
     handleCreate() {
-      const { appName, buildNum, selectLogs, increment, relativebuildNum } = this.form
+      var appIndex = this.appNameDisplayOptions.indexOf(this.appNameDisplay)
+      var appName = this.appNameOptions[appIndex]
+      var buildNum = this.buildNum
+      var selectLogs = this.selectLogs
+      var relativebuildNum = this.relativebuildNum
       var error = 0
       if (!appName) error |= 1
       var buildNumInt = parseInt(buildNum, 10)
       if (!buildNumInt || buildNumInt <= 0) error |= 2
       if (!selectLogs || selectLogs.length === 0) error |= 4
       var relativebuildNumInt = parseInt(relativebuildNum, 10)
-      if (increment && (!relativebuildNumInt || relativebuildNumInt <= 0)) error |= 8
+      //   if (!buildNumInt || relativebuildNumInt <= 0) error |= 8
 
       console.log(buildNum)
       this.errors = error
@@ -153,10 +169,8 @@ export default {
         this.$notify.error('参数异常')
         return
       }
-      var data = { appName, buildNum: buildNumInt, logs: selectLogs, increment }
-      if (increment) {
-        data.relativebuildNum = relativebuildNumInt
-      }
+      var data = { appName, buildNum: buildNumInt, logs: selectLogs }
+      data.relativebuildNum = relativebuildNumInt
       createReport(data).then(response => {
         console.log(`createReport response:${JSON.stringify(response)}`)
         if (response.status === true) {
@@ -164,25 +178,26 @@ export default {
           this.$emit('create-success')
         }
       })
+    },
+    checkSelectable(build) {
+      console.log(`checkSelectable:${JSON.stringify(build)}`)
+      var buildNum = this.buildNum
+      var relaBuildNum = this.relativebuildNum
+      return (relaBuildNum && build.buildNum > relaBuildNum) && build.buildNum <= buildNum
     }
-
   }
+
 }
 </script>
 <style lang='scss' scoped>
 
 .filter-item{
-    margin-left: 10px;
-}
-.increment-container{
-    display: flex;
-    margin-top: 10px;
-    height: 50px;
-    align-items: center;
+    margin-left: 1px;
 }
 .dialog-footer{
    display: flex;
    justify-content: right;
+   margin-top: 10px;
 }
 .error-text{
     color: red;
