@@ -92,7 +92,7 @@
 </template>
 
 <script>
-import { getReportList, getJenkinsBuild } from '@/api/report'
+import { getReportList } from '@/api/report'
 import ReportCreateDialog from './report-create-dialog/index.vue'
 import clip from '@/utils/clipboard' // use clipboard directly
 
@@ -143,9 +143,6 @@ export default {
         this.listQuery.pageSize = entry.pageSize
         this.total = entry.count
         this.listLoading = false
-      })
-      getJenkinsBuild(params).then((response) => {
-        console.log(response)
       })
     },
     handleFilter() {
