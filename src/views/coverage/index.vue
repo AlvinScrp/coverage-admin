@@ -92,7 +92,7 @@
 </template>
 
 <script>
-import { getReportList } from '@/api/report'
+import { getReportList } from '@/api/coverage'
 import ReportCreateDialog from './report-create-dialog/index.vue'
 import clip from '@/utils/clipboard' // use clipboard directly
 

@@ -19,7 +19,7 @@
     <div style="margin-top: 10px;">
       增量比较：
       <el-input v-model="relativebuildNum" size="small" type="Number" placeholder="相对构建序号" style="width: 130px;" class="filter-item" />
-      <span> （不填就生成全量报告）</span>
+      <span> （不填，就全量报告）</span>
     </div>
     <!-- :selectable="row.enable" -->
     <el-table
@@ -54,7 +54,7 @@
 </template>
 
 <script>
-import { getLogList, getLogBuildList, createReport } from '@/api/report'
+import { getLogList, getLogBuildList, createReport } from '@/api/coverage.js'
 export default {
   props: {
     appNameDisplayProp: {
@@ -108,12 +108,12 @@ export default {
   },
   methods: {
     fetchLogList(manual) {
-      if (!this.buildNum || parseInt(this.buildNum) <= 0) {
-        if (manual) {
-          this.$message.error('构建序号必须 > 0')
-        }
-        return
-      }
+    //   if (!this.buildNum || parseInt(this.buildNum) <= 0) {
+    //     if (manual) {
+    //       this.$message.error('构建序号必须 > 0')
+    //     }
+    //     return
+    //   }
       var appIndex = this.appNameDisplayOptions.indexOf(this.appNameDisplay)
       var listQuery = {
         appName: this.appNameOptions[appIndex],

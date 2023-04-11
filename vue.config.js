@@ -6,14 +6,14 @@ function resolve(dir) {
   return path.join(__dirname, dir)
 }
 
-const name = defaultSettings.title || 'vue Admin Template' // page title
+const name = defaultSettings.title // page title
 
 // If your port is set to 80,
 // use administrator privileges to execute the command line.
 // For example, Mac: sudo npm run
 // You can change the port by the following methods:
 // port = 9528 npm run dev OR npm run dev --port = 9528
-const port = process.env.port || process.env.npm_config_port || 9528 // dev port
+const port = process.env.port || process.env.VUE_PROT || 9528 // dev port
 
 // All configuration item explanations can be find in https://cli.vuejs.org/config/
 module.exports = {
@@ -37,11 +37,8 @@ module.exports = {
       errors: true
     },
     proxy: {
-      '/api/report': {
-        target: process.env.VUE_APP_REPORT_HOST // 我们要代理请求的真正地址
-      },
-      '/api/log': {
-        target: process.env.VUE_APP_REPORT_HOST // 我们要代理请求的真正地址
+      '/coverage-api': {
+        target: 'http://localhost:3000' // 我们要代理请求的真正地址
       }
     },
     before: require('./mock/mock-server.js')

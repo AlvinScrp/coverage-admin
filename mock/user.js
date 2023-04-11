@@ -12,13 +12,13 @@ const users = {
   'admin-token': {
     roles: ['admin'],
     introduction: 'I am a super administrator',
-    avatar: 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif',
+    avatar: 'https://img02.mockplus.cn/image/2023-04-11/2d05d690-d83f-11ed-b3f7-637c95f3c6ef.jpeg',
     name: 'Super Admin'
   },
   'editor-token': {
     roles: ['editor'],
     introduction: 'I am an editor',
-    avatar: 'https://wpimg.wallstcn.com/f778738c-e4f8-4870-b634-56703b4acafe.gif',
+    avatar: 'https://img02.mockplus.cn/image/2023-04-11/2d05d690-d83f-11ed-b3f7-637c95f3c6ef.jpeg',
     name: 'Normal Editor'
   }
 }

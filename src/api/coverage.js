@@ -1,8 +1,8 @@
-import request from '@/utils/report-request'
+import request from '@/utils/coverage-request'
 
 export function getReportList(params) {
   return request({
-    url: '/api/report/list',
+    url: '/coverage-api/report/list',
     method: 'get',
     params
   })
@@ -11,7 +11,7 @@ export function getReportList(params) {
 export function getLogList(params) {
   //   return request.get('/api/log/list', { params })
   return request({
-    url: '/api/log/list',
+    url: '/coverage-api/log/list',
     method: 'get',
     params
   })
@@ -20,7 +20,7 @@ export function getLogList(params) {
 export function getLogBuildList(params) {
   //   return request.get('/api/log/list', { params })
   return request({
-    url: '/api/log/build/list',
+    url: '/coverage-api/log/build/list',
     method: 'get',
     params
   })
@@ -31,7 +31,7 @@ export function createReport(data) {
   //   return request.post('/api/report/create', { appName: 'fxj', buildNum: 200 })
   return request({
     // baseURL: 'http://localhost:3000',
-    url: '/api/report/create',
+    url: '/coverage-api/report/create',
     method: 'post',
     data
     // data: { appName: 'fxj', buildNum: 200 }
