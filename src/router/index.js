@@ -69,7 +69,7 @@ export const constantRoutes = [
         path: 'index',
         nanme: 'Coverage',
         component: () => import('@/views/coverage/index'),
-        meta: { title: '代码覆盖率', icon: 'bug' }
+        meta: { title: '覆盖率报告列表', icon: 'bug' }
       }
     ]
   },

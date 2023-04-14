@@ -79,3 +79,33 @@ docker push alvinscrp/coverage-admin:v0.0.3
 ## image hub pull
 docker pull alvinscrp/coverage-admin:v0.0.3
 docker run -p 9001:9001 -d alvinscrp/coverage-admin 
+
+# nginx
+
+## conf位置:
+vim /usr/local/etc/nginx/nginx.conf
+## 设置全局配置指令
+nginx -g /usr/local/etc/nginx/nginx.conf
+
+## 检查Nginx配置文件是否正确命令：
+ ./nginx -t
+
+指定检测特定Nginx配置文件：-c表示configuration，指定配置文件
+./nginx -t -c /usr/local/etc/nginx/nginx.conf
+
+## Nginx服务器指定启动配置文件命令：
+./nginx -c /usr/local/etc/nginx/nginx.conf
+## 暴力停止Nginx服务器命令：
+./nginx -s stop
+## 优雅停止Nginx服务器命令：
+./nginx -s quit
+## Nginx重新加载配置文件命令：
+./nginx -s reload
+
+## Nginx重启
+nginx -s reopen 
+
+
+# pm2
+## 重启服务
+pm2 restart coverage-server

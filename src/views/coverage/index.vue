@@ -8,12 +8,15 @@
         v-model="listQuery.buildNum"
         type="Number"
         placeholder="构建序号"
-        style="width: 100px"
+        style="width: 120px"
         class="filter-item"
         @keyup.enter.native="handleFilter"
       />
       <el-button class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">
         查询
+      </el-button>
+      <el-button class="filter-item" type="primary" icon="el-icon-refresh" @click="handleFilter">
+        刷新
       </el-button>
       <div class="filter-empty" />
 
@@ -29,16 +32,19 @@
       fit
       highlight-current-row
     >
-      <el-table-column align="center" label="ID" width="60">
+      <!-- <el-table-column align="center" label="ID" width="60">
         <template slot-scope="scope"> {{ scope.$index }} </template>
-      </el-table-column>
-      <el-table-column align="center" label="应用名称" width="160">
+      </el-table-column> -->
+      <!-- <el-table-column align="center" label="应用名称" width="160">
         <template slot-scope="scope"> {{ appNameToDisplay(scope.row.appName ) }} </template>
+      </el-table-column> -->
+      <el-table-column align="center" label="文件名称" min-width="200">
+        <template slot-scope="scope"> {{ scope.row.fileName }} </template>
       </el-table-column>
       <el-table-column align="center" label="构建序号">
         <template slot-scope="scope"> {{ scope.row.buildNum }} </template>
       </el-table-column>
-      <el-table-column align="center" label="全量">
+      <el-table-column align="center" label="增量">
         <template slot-scope="scope"> {{ scope.row.increment ? "是" : "否" }} </template>
       </el-table-column>
       <el-table-column align="center" label="相对序号">
@@ -46,20 +52,20 @@
           {{ scope.row.increment ? `${scope.row.relativebuildNum}` : " - " }}
         </template>
       </el-table-column>
-      <el-table-column align="center" label="时间" width="200">
+      <el-table-column align="center" label="时间" min-width="200">
         <template slot-scope="scope"> {{ scope.row.formatTime }} </template>
       </el-table-column>
-      <el-table-column align="center" label="预览链接" fixed="right" width="150">
+      <el-table-column align="center" label="报告链接" fixed="right" width="150">
         <template slot-scope="scope">
           <el-button type="primary" size="mini" @click="handlePreview(scope.row)">
-            跳转
+            查看
           </el-button>
           <el-button size="mini" @click="handleCopyLink(scope.row.previewUrl,$event)">
             复制
           </el-button>
         </template>
       </el-table-column>
-      <el-table-column align="center" label="下载链接" fixed="right" width="150">
+      <!-- <el-table-column align="center" label="下载链接" fixed="right" width="150">
         <template slot-scope="scope">
           <el-button type="primary" size="mini" @click="handleDownload(scope.row)">
             下载
@@ -68,7 +74,7 @@
             复制
           </el-button>
         </template>
-      </el-table-column>
+      </el-table-column> -->
     </el-table>
     <el-pagination
       :current-page.sync="listQuery.pageIndex"
@@ -83,7 +89,6 @@
       <report-create-dialog
         v-if="createReportDialogVisible"
         :app-name-display-prop="appNameDisplay"
-        :build-num-prop="listQuery.buildNum"
         @dismiss="createReportDialogVisible = false"
         @create-success="handleCreateReportSuccess"
       />
@@ -95,6 +100,7 @@
 import { getReportList } from '@/api/coverage'
 import ReportCreateDialog from './report-create-dialog/index.vue'
 import clip from '@/utils/clipboard' // use clipboard directly
+import { Logger } from 'runjs/lib/common'
 
 export default {
   name: 'ReportTable',
@@ -106,7 +112,7 @@ export default {
       listQuery: {
         pageSize: 10,
         pageIndex: 1,
-        buildNum: '211'
+        buildNum: ''
 
       },
       total: 0,
@@ -118,6 +124,16 @@ export default {
       pageSizeOptions: [5, 10, 20, 50]
     }
   },
+  watch: {
+    appNameDisplay: function(newVal, oldVal) {
+      console.log(`watch appNameDisplay :oldVal,newVal --> ${oldVal},${newVal}`)
+      if (newVal !== oldVal) {
+        this.listQuery.buildNum = ''
+        this.fetchData()
+      }
+    }
+  },
+
   created() {
     this.fetchData()
   },

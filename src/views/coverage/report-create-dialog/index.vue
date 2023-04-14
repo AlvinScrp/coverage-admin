@@ -5,45 +5,60 @@
       <el-select v-model="appNameDisplay" size="small" placeholder="应用名称" style="width: 200px" class="filter-item">
         <el-option v-for="item in appNameDisplayOptions" :key="item" :label="item" :value="item" />
       </el-select>
+      <span style="color: red;font-size: 20px;"> * </span>
     </div>
     <div style="margin-top: 10px;">
-      构建序号：
+      目标构建序号：
       <el-input v-model="buildNum" placeholder="构建序号" size="small" type="Number" style="width: 130px;" class="filter-item" @keyup.enter.native="handleFilter" />
       <!-- <el-button class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">
         查询可用日志
       </el-button> -->
+      <span style="color: red;font-size: 20px;"> * </span>
       <div v-if="showErrorBuildNum">
         <span class="error-text"> 至少选择一个包含日志的构建序号</span>
       </div>
-    </div>
-    <div style="margin-top: 10px;">
-      增量比较：
+      <!-- </div>
+    <div style="margin-top: 10px;"> -->
+      <span style="margin-left: 30px;">增量：</span>
       <el-input v-model="relativebuildNum" size="small" type="Number" placeholder="相对构建序号" style="width: 130px;" class="filter-item" />
-      <span> （不填，就全量报告）</span>
+      <span> （不填，就生成全量报告）</span>
     </div>
     <!-- :selectable="row.enable" -->
-    <el-table
-      ref="logBuildTable"
-      style="margin-top: 10px;"
-      size="small"
-      max-height="515px"
-      border
-      :data="builds"
-      @selection-change="handleSelectionChange"
-    >
-      <el-table-column
-        type="selection"
-        width="55"
-        align="center"
-        :selectable="checkSelectable"
-      />
-      <el-table-column label=" 包含可用日志的目录">
-        <template slot-scope="scope">  {{ scope.row.buildLogDir }} </template>
-      </el-table-column>
 
-    </el-table>
-    <div v-if="showErrorLog">
-      <span class="error-text"> 至少选择一个包含日志的目录</span>
+    <div>
+      <p>日志目录可选条件：<span style="color: red;">&lt;= 构建序号 &&  &gt;相对构建序号</span> <span v-if="isIOS" style="margin-left: 10px;">  ( iOS应用不需要勾选日志目录 ) </span></p>
+      <el-table
+        ref="logBuildTable"
+        style="margin-top: 10px;"
+        size="small"
+        max-height="515px"
+        border
+        :data="builds"
+        @selection-change="handleSelectionChange"
+      >
+        <el-table-column
+          type="selection"
+          width="55"
+          align="center"
+          :selectable="checkSelectable"
+        />
+        <el-table-column width="120" label="Jenkins构建序号 ">
+          <template slot-scope="scope">
+            <span :class="logTextStyle(scope.row)">
+              {{ scope.row.buildNum }}
+            </span> </template>
+        </el-table-column>
+        <el-table-column label="日志目录 ">
+          <template slot-scope="scope">
+            <span :class="logTextStyle(scope.row)">
+              {{ scope.row.buildLogDir }}
+            </span> </template>
+        </el-table-column>
+
+      </el-table>
+      <div v-if="showErrorLog">
+        <span class="error-text"> 至少选择一个包含日志的目录</span>
+      </div>
     </div>
 
     <div slot="footer" class="dialog-footer">
@@ -69,7 +84,7 @@ export default {
   data() {
     return {
       buildNum: '',
-      relativebuildNum: '200',
+      relativebuildNum: '',
       selectLogs: [],
       appNameDisplay: '蜂享家掌柜-Android',
       appNameOptions: ['FXJ', 'FXJ', 'HYK'],
@@ -86,6 +101,10 @@ export default {
     },
     showErrorLog: function() {
       return (this.errors & 4) > 0
+    },
+    isIOS: function() {
+      var appIndex = this.appNameDisplayOptions.indexOf(this.appNameDisplay)
+      return this.osTypes[appIndex] === 'iOS'
     }
   },
   watch: {
@@ -94,6 +113,12 @@ export default {
     },
     relativebuildNum(val) {
       this.resetLogBuildSelection()
+    },
+    appNameDisplay: function(newVal, oldVal) {
+      if (newVal !== oldVal) {
+        this.buildNum = ''
+        this.fetchLogList()
+      }
     }
   },
 
@@ -151,6 +176,7 @@ export default {
     handleCreate() {
       var appIndex = this.appNameDisplayOptions.indexOf(this.appNameDisplay)
       var appName = this.appNameOptions[appIndex]
+      var osType = this.osTypes[appIndex]
       var buildNum = this.buildNum
       var selectLogs = this.selectLogs
       var relativebuildNum = this.relativebuildNum
@@ -158,7 +184,7 @@ export default {
       if (!appName) error |= 1
       var buildNumInt = parseInt(buildNum, 10)
       if (!buildNumInt || buildNumInt <= 0) error |= 2
-      if (!selectLogs || selectLogs.length === 0) error |= 4
+      if (!this.isIOS && (!selectLogs || selectLogs.length === 0)) error |= 4
       var relativebuildNumInt = parseInt(relativebuildNum, 10)
       //   if (!buildNumInt || relativebuildNumInt <= 0) error |= 8
 
@@ -169,7 +195,7 @@ export default {
         this.$notify.error('参数异常')
         return
       }
-      var data = { appName, buildNum: buildNumInt, logs: selectLogs }
+      var data = { osType, appName, buildNum: buildNumInt, logs: selectLogs }
       data.relativebuildNum = relativebuildNumInt
       createReport(data).then(response => {
         console.log(`createReport response:${JSON.stringify(response)}`)
@@ -181,9 +207,14 @@ export default {
     },
     checkSelectable(build) {
       console.log(`checkSelectable:${JSON.stringify(build)}`)
-      var buildNum = this.buildNum
-      var relaBuildNum = this.relativebuildNum
-      return (relaBuildNum && build.buildNum > relaBuildNum) && build.buildNum <= buildNum
+      var buildNum = parseInt(this.buildNum)
+      var relaBuildNum = parseInt(this.relativebuildNum)
+      return (!relaBuildNum || build.buildNum > relaBuildNum) && build.buildNum <= buildNum
+    },
+    logTextStyle(build) {
+      const selectable = this.checkSelectable(build)
+      console.log(JSON.stringify(build) + `selectable:${selectable}`)
+      return selectable ? 'log-text' : 'log-text-diable'
     }
   }
 
@@ -201,6 +232,12 @@ export default {
 }
 .error-text{
     color: red;
+}
+.log-text{
+
+}
+.log-text-diable{
+    color: #3333;
 }
 
 </style>

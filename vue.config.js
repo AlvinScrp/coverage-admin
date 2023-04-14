@@ -13,7 +13,7 @@ const name = defaultSettings.title // page title
 // For example, Mac: sudo npm run
 // You can change the port by the following methods:
 // port = 9528 npm run dev OR npm run dev --port = 9528
-const port = process.env.port || process.env.VUE_PROT || 9528 // dev port
+const port = process.env.port || process.env.VUE_PORT || 9001 // dev port
 
 // All configuration item explanations can be find in https://cli.vuejs.org/config/
 module.exports = {
@@ -38,7 +38,7 @@ module.exports = {
     },
     proxy: {
       '/coverage-api': {
-        target: 'http://localhost:3000' // 我们要代理请求的真正地址
+        target: 'http://localhost:9002' // 我们要代理请求的真正地址
       }
     },
     before: require('./mock/mock-server.js')
