@@ -30,7 +30,7 @@
       element-loading-text="Loading"
       border
       fit
-      highlight-current-row
+      :row-style="tableRowStyle"
     >
       <!-- <el-table-column align="center" label="ID" width="60">
         <template slot-scope="scope"> {{ scope.$index }} </template>
@@ -38,8 +38,9 @@
       <!-- <el-table-column align="center" label="应用名称" width="160">
         <template slot-scope="scope"> {{ appNameToDisplay(scope.row.appName ) }} </template>
       </el-table-column> -->
+      <!-- v-if="scope.row.isNew"  -->
       <el-table-column align="center" label="文件名称" min-width="200">
-        <template slot-scope="scope"> {{ scope.row.fileName }} </template>
+        <template slot-scope="scope"> {{ scope.row.fileName }} <span v-if="scope.row.isNew" class="new-text">new !</span> </template>
       </el-table-column>
       <el-table-column align="center" label="构建序号">
         <template slot-scope="scope"> {{ scope.row.buildNum }} </template>
@@ -55,7 +56,7 @@
       <el-table-column align="center" label="时间" min-width="200">
         <template slot-scope="scope"> {{ scope.row.formatTime }} </template>
       </el-table-column>
-      <el-table-column align="center" label="报告链接" fixed="right" width="150">
+      <el-table-column align="center" label="报告链接" fixed="right" width="250">
         <template slot-scope="scope">
           <el-button type="primary" size="mini" @click="handlePreview(scope.row)">
             查看
@@ -100,7 +101,7 @@
 import { getReportList } from '@/api/coverage'
 import ReportCreateDialog from './report-create-dialog/index.vue'
 import clip from '@/utils/clipboard' // use clipboard directly
-import { Logger } from 'runjs/lib/common'
+// import report from 'mock/report'
 
 export default {
   name: 'ReportTable',
@@ -138,7 +139,7 @@ export default {
     this.fetchData()
   },
   methods: {
-    fetchData() {
+    fetchData(newHighlight, notify) {
       this.listLoading = true
       var { pageSize, pageIndex, buildNum } = this.listQuery
       var appIndex = this.appNameDisplayOptions.indexOf(this.appNameDisplay)
@@ -152,17 +153,35 @@ export default {
         }
       }
       getReportList(params).then((response) => {
+        this.listLoading = false
+        if (notify) {
+          this.$message.success({ message: '请求成功', duration: 1000 })
+        }
         console.log(response)
         var entry = response.entry
-        this.list = entry.list
+        const oldList = this.list
+        const newList = entry.list
+
+        if (newHighlight && oldList && oldList.length > 0 && newList && newList.length > 0) {
+          const oldFirstFileName = oldList[0].fileName
+          for (let idx = 0; idx < newList.length; idx++) {
+            const report = newList[idx]
+            if (report.fileName !== oldFirstFileName) {
+              report.isNew = true
+            } else {
+              break
+            }
+          }
+        }
+        this.list = newList
+        console.log(this.list)
         this.listQuery.pageIndex = entry.pageNo
         this.listQuery.pageSize = entry.pageSize
         this.total = entry.count
-        this.listLoading = false
       })
     },
     handleFilter() {
-      this.fetchData()
+      this.fetchData(false, true)
     },
     handleCreateReport() {
       this.createReportDialogVisible = true
@@ -192,11 +211,19 @@ export default {
     },
     handleCreateReportSuccess(params) {
       console.log(params)
+      this.fetchData(true)
     },
     appNameToDisplay(appName) {
       var index = this.appNameOptions.indexOf(appName)
       return this.appNameDisplayOptions[index]
+    },
+    tableRowStyle({ row, rowIndex }) {
+      return row.isNew ? {
+        'background-color': '#f0f9eb'
+      } : {}
+    //   return row.isNew ? 'success-row' : ''
     }
+
   }
 }
 </script>
@@ -213,5 +240,15 @@ export default {
   .filter-item {
     margin-left: 10px;
   }
+}
+
+.new-text{
+    margin-left: 10px;
+    color: white;
+    background-color:red ;
+    padding: 0px 6px;
+    display: inline-block;
+    border-color: red;
+    border-radius: 10px;
 }
 </style>

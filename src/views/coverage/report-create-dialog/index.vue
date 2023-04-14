@@ -1,5 +1,5 @@
 <template>
-  <div style="margin-top: -20px;">
+  <div id="dialog-body" style="margin-top: -20px;">
     <div>
       应用名称：
       <el-select v-model="appNameDisplay" size="small" placeholder="应用名称" style="width: 200px" class="filter-item">
@@ -195,13 +195,26 @@ export default {
         this.$notify.error('参数异常')
         return
       }
+      const loading = this.$loading({
+        target: '#dialog-body',
+        lock: true,
+        text: '创建中，请稍等',
+        spinner: 'el-icon-loading',
+        background: 'rgba(256, 256, 256, 0.8)'
+      })
       var data = { osType, appName, buildNum: buildNumInt, logs: selectLogs }
       data.relativebuildNum = relativebuildNumInt
       createReport(data).then(response => {
         console.log(`createReport response:${JSON.stringify(response)}`)
+        loading.close()
         if (response.status === true) {
           this.$emit('dismiss')
           this.$emit('create-success')
+          this.$message.success('创建成功')
+        } else {
+          this.$message.error({
+            message: '创建失败'
+          })
         }
       })
     },
