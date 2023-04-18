@@ -7,8 +7,8 @@
       <el-input
         v-model="listQuery.buildNum"
         type="Number"
-        placeholder="构建序号"
-        style="width: 120px"
+        placeholder="Jenkins打包构建序号"
+        style="width: 200px"
         class="filter-item"
         @keyup.enter.native="handleFilter"
       />
@@ -35,34 +35,34 @@
       <!-- <el-table-column align="center" label="ID" width="60">
         <template slot-scope="scope"> {{ scope.$index }} </template>
       </el-table-column> -->
-      <!-- <el-table-column align="center" label="应用名称" width="160">
-        <template slot-scope="scope"> {{ appNameToDisplay(scope.row.appName ) }} </template>
-      </el-table-column> -->
       <!-- v-if="scope.row.isNew"  -->
-      <el-table-column align="center" label="文件名称" min-width="200">
+      <el-table-column align="center" label="报告文件名称" min-width="180">
         <template slot-scope="scope"> {{ scope.row.fileName }} <span v-if="scope.row.isNew" class="new-text">new !</span> </template>
       </el-table-column>
-      <el-table-column align="center" label="构建序号">
-        <template slot-scope="scope"> {{ scope.row.buildNum }} </template>
+      <el-table-column align="center" label="应用名称" width="150">
+        <template slot-scope="scope"> {{ appNameToDisplay(scope.row.appName ) }} </template>
       </el-table-column>
-      <el-table-column align="center" label="增量">
-        <template slot-scope="scope"> {{ scope.row.increment ? "是" : "否" }} </template>
+      <el-table-column align="center" label="基于构建序号" width="120">
+        <template slot-scope="scope"> {{ scope.row.buildNum }} </template>
       </el-table-column>
       <el-table-column align="center" label="相对序号">
         <template slot-scope="scope">
           {{ scope.row.increment ? `${scope.row.relativebuildNum}` : " - " }}
         </template>
       </el-table-column>
-      <el-table-column align="center" label="时间" min-width="200">
+      <el-table-column align="center" label="增量">
+        <template slot-scope="scope"> {{ scope.row.increment ? "是" : "否" }} </template>
+      </el-table-column>
+      <el-table-column align="center" label="报告创建时间" min-width="200">
         <template slot-scope="scope"> {{ scope.row.formatTime }} </template>
       </el-table-column>
-      <el-table-column align="center" label="报告链接" fixed="right" width="250">
+      <el-table-column align="center" label="操作" fixed="right" width="250">
         <template slot-scope="scope">
           <el-button type="primary" size="mini" @click="handlePreview(scope.row)">
-            查看
+            查看报告
           </el-button>
           <el-button size="mini" @click="handleCopyLink(scope.row.previewUrl,$event)">
-            复制
+            复制报告链接
           </el-button>
         </template>
       </el-table-column>
@@ -139,7 +139,7 @@ export default {
     this.fetchData()
   },
   methods: {
-    fetchData(newHighlight, notify) {
+    fetchData(notify) {
       this.listLoading = true
       var { pageSize, pageIndex, buildNum } = this.listQuery
       var appIndex = this.appNameDisplayOptions.indexOf(this.appNameDisplay)
@@ -159,21 +159,7 @@ export default {
         }
         console.log(response)
         var entry = response.entry
-        const oldList = this.list
-        const newList = entry.list
-
-        if (newHighlight && oldList && oldList.length > 0 && newList && newList.length > 0) {
-          const oldFirstFileName = oldList[0].fileName
-          for (let idx = 0; idx < newList.length; idx++) {
-            const report = newList[idx]
-            if (report.fileName !== oldFirstFileName) {
-              report.isNew = true
-            } else {
-              break
-            }
-          }
-        }
-        this.list = newList
+        this.list = entry.list
         console.log(this.list)
         this.listQuery.pageIndex = entry.pageNo
         this.listQuery.pageSize = entry.pageSize
@@ -181,7 +167,7 @@ export default {
       })
     },
     handleFilter() {
-      this.fetchData(false, true)
+      this.fetchData(true)
     },
     handleCreateReport() {
       this.createReportDialogVisible = true
@@ -209,9 +195,25 @@ export default {
       console.log('copylink')
       clip(url, event)
     },
-    handleCreateReportSuccess(params) {
-      console.log(params)
-      this.fetchData(true)
+    handleCreateReportSuccess(value) {
+      console.log(value)
+      var { osType, appName, buildNum } = value
+      var params = { pageIndex: 1, pageSize: 1, osType, appName, buildNum }
+      getReportList(params).then((response) => {
+        console.log(response)
+        var entry = response.entry
+        if (entry.list && entry.list.length > 0) {
+          entry.list[0].isNew = true
+          const newList = [entry.list[0]]
+          const oldList = this.list
+          if (oldList && oldList.length > 0) {
+            oldList.splice(-1, 1)
+            newList.push(...oldList)
+            console.log('newList:' + newList)
+          }
+          this.list = newList
+        }
+      })
     },
     appNameToDisplay(appName) {
       var index = this.appNameOptions.indexOf(appName)

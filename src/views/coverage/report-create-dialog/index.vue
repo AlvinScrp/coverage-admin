@@ -209,7 +209,7 @@ export default {
         loading.close()
         if (response.status === true) {
           this.$emit('dismiss')
-          this.$emit('create-success')
+          this.$emit('create-success', { osType, appName, buildNum })
           this.$message.success('创建成功')
         } else {
           this.$message.error({
