@@ -8,7 +8,7 @@
       <span style="color: red;font-size: 20px;"> * </span>
     </div>
     <div style="margin-top: 10px;">
-      目标构建序号：
+      报告是基于此次构建
       <el-input v-model="buildNum" placeholder="构建序号" size="small" type="Number" style="width: 130px;" class="filter-item" @keyup.enter.native="handleFilter" />
       <!-- <el-button class="filter-item" type="primary" icon="el-icon-search" @click="handleFilter">
         查询可用日志
@@ -19,21 +19,22 @@
       </div>
       <!-- </div>
     <div style="margin-top: 10px;"> -->
-      <span style="margin-left: 30px;">增量：</span>
+      <span>的代码，相较构建序号</span>
       <el-input v-model="relativebuildNum" size="small" type="Number" placeholder="相对构建序号" style="width: 130px;" class="filter-item" />
-      <span> （不填，就生成全量报告）</span>
+      <span> 所有变更代码的增量报告 （不填，就生成全量报告）</span>
     </div>
     <!-- :selectable="row.enable" -->
 
     <div>
-      <p>日志目录可选条件：<span style="color: red;">&lt;= 构建序号 &&  &gt;相对构建序号</span> <span v-if="isIOS" style="margin-left: 10px;">  ( iOS应用不需要勾选日志目录 ) </span></p>
+      <!-- <p>日志目录可选条件：<span style="color: red;">&lt;= 构建序号 &&  &gt;相对构建序号</span> <span v-if="isIOS" style="margin-left: 10px;">  ( iOS应用不需要勾选日志目录 ) </span></p> -->
+      <p>选择jenkins构建安装包的运行日志：</p>
       <el-table
         ref="logBuildTable"
         style="margin-top: 10px;"
-        size="small"
         max-height="515px"
         border
         :data="builds"
+        :row-style="tableRowStyle"
         @selection-change="handleSelectionChange"
       >
         <el-table-column
@@ -42,17 +43,52 @@
           align="center"
           :selectable="checkSelectable"
         />
-        <el-table-column width="120" label="Jenkins构建序号 ">
+        <!-- :class="logTextStyle(scope.row)" -->
+        <el-table-column width="80" label="构建序号" align="center">
           <template slot-scope="scope">
-            <span :class="logTextStyle(scope.row)">
+            <span>
               {{ scope.row.buildNum }}
             </span> </template>
         </el-table-column>
-        <el-table-column label="日志目录 ">
+        <el-table-column width="120" label="包含运行日志" align="center">
           <template slot-scope="scope">
-            <span :class="logTextStyle(scope.row)">
-              {{ scope.row.buildLogDir }}
+            <span>
+              {{ scope.row.hasLogDir?"是":"否" }}
             </span> </template>
+        </el-table-column>
+        <el-table-column width="150" label="分支" align="center">
+          <template slot-scope="scope">
+            <span>
+              {{ scope.row.jenkinsInfo? scope.row.jenkinsInfo.branch : "" }}
+            </span> </template>
+        </el-table-column>
+        <el-table-column width="80" label="构建环境" align="center">
+          <template slot-scope="scope">
+            {{ scope.row.jenkinsInfo? scope.row.jenkinsInfo.environment : "" }}
+          </template>
+        </el-table-column>
+        <el-table-column width="100" label="发布/审核包" align="center">
+          <template slot-scope="scope">
+            {{ scope.row.jenkinsInfo? (scope.row.jenkinsInfo.isDeploy?"是":"否"):"" }}
+          </template>
+        </el-table-column>
+        <el-table-column width="90" label="构建人" align="center">
+          <template slot-scope="scope">
+            {{ scope.row.jenkinsInfo? scope.row.jenkinsInfo.userName :"" }}
+          </template>
+        </el-table-column>
+        <el-table-column width="190" label="构建时间" align="center">
+          <template slot-scope="scope">
+            {{ scope.row.jenkinsInfo? scope.row.jenkinsInfo.timeFormat :"" }}
+          </template>
+        </el-table-column>
+
+        <el-table-column label="构建详情 ">
+          <template slot-scope="scope">
+            <el-button v-if="scope.row.jenkinsInfo" type="text" size="mini" @click="handlePreviewBuildDetail(scope.row)">
+              查看
+            </el-button>
+          </template>
         </el-table-column>
 
       </el-table>
@@ -147,6 +183,8 @@ export default {
 
       getLogBuildList(listQuery).then(response => {
         this.builds = response.entry.list
+        console.log('this.builds[0]')
+        console.log(this.builds[0])
         this.$nextTick(() => {
           this.resetLogBuildSelection()
         })
@@ -156,7 +194,6 @@ export default {
       console.log('resetLogBuildSelection')
       this.$refs.logBuildTable.clearSelection()
       this.builds.forEach(item => {
-        console.log(item)
         if (this.checkSelectable(item) && item.buildNum === this.buildNum) {
           this.$refs.logBuildTable.toggleRowSelection(item)
         }
@@ -167,7 +204,7 @@ export default {
     },
     handleSelectionChange(selections) {
       this.selectLogs = selections
-      console.log(this.selectLogs)
+    //   console.log(this.selectLogs)
     },
     showError(index) {
       console.log(`showError:${index} ${(this.errors & index) > 0}`)
@@ -218,15 +255,24 @@ export default {
         }
       })
     },
+    handlePreviewBuildDetail(build) {
+      console.log(`preview:${build.jenkinsInfo.url}`)
+      window.open(build.jenkinsInfo.url, '_blank')
+    },
     checkSelectable(build) {
-      console.log(`checkSelectable:${JSON.stringify(build)}`)
-      var buildNum = parseInt(this.buildNum)
-      var relaBuildNum = parseInt(this.relativebuildNum)
-      return (!relaBuildNum || build.buildNum > relaBuildNum) && build.buildNum <= buildNum
+    //   var buildNum = parseInt(this.buildNum)
+    //   var relaBuildNum = parseInt(this.relativebuildNum)
+      //   return (!relaBuildNum || build.buildNum > relaBuildNum) && build.buildNum <= buildNum
+      return build.hasLogDir
+    },
+    tableRowStyle({ row, rowIndex }) {
+      return !row.hasLogDir ? {
+        'color': '#3333'
+      } : {}
+    //   return row.isNew ? 'success-row' : ''
     },
     logTextStyle(build) {
       const selectable = this.checkSelectable(build)
-      console.log(JSON.stringify(build) + `selectable:${selectable}`)
       return selectable ? 'log-text' : 'log-text-diable'
     }
   }

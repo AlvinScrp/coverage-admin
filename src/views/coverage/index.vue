@@ -36,16 +36,16 @@
         <template slot-scope="scope"> {{ scope.$index }} </template>
       </el-table-column> -->
       <!-- v-if="scope.row.isNew"  -->
-      <el-table-column align="center" label="报告文件名称" min-width="180">
+      <!-- <el-table-column align="center" label="报告文件名称" min-width="180">
         <template slot-scope="scope"> {{ scope.row.fileName }} <span v-if="scope.row.isNew" class="new-text">new !</span> </template>
-      </el-table-column>
-      <el-table-column align="center" label="应用名称" width="150">
+      </el-table-column> -->
+      <el-table-column align="center" label="应用名称" min-width="150">
         <template slot-scope="scope"> {{ appNameToDisplay(scope.row.appName ) }} </template>
       </el-table-column>
-      <el-table-column align="center" label="基于构建序号" width="120">
+      <el-table-column align="center" label="报告源码构建序号">
         <template slot-scope="scope"> {{ scope.row.buildNum }} </template>
       </el-table-column>
-      <el-table-column align="center" label="相对序号">
+      <el-table-column align="center" label="相对构建序号">
         <template slot-scope="scope">
           {{ scope.row.increment ? `${scope.row.relativebuildNum}` : " - " }}
         </template>
@@ -58,10 +58,10 @@
       </el-table-column>
       <el-table-column align="center" label="操作" fixed="right" width="250">
         <template slot-scope="scope">
-          <el-button type="primary" size="mini" @click="handlePreview(scope.row)">
+          <el-button type="text" size="mini" @click="handlePreview(scope.row)">
             查看报告
           </el-button>
-          <el-button size="mini" @click="handleCopyLink(scope.row.previewUrl,$event)">
+          <el-button type="text" size="mini" @click="handleCopyLink(scope.row.previewUrl,$event)">
             复制报告链接
           </el-button>
         </template>
